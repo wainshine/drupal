@@ -130,9 +130,13 @@ abstract class UpdatePathTestBase extends BrowserTestBase {
    * @param $test_id
    *   (optional) The ID of the test. Tests with the same id are reported
    *   together.
+   * @param array $data
+   *   (optional) The test case data. Defaults to none.
+   * @param string $data_name
+   *   The test data name. Defaults to none.
    */
-  public function __construct($test_id = NULL) {
-    parent::__construct($test_id);
+  public function __construct($test_id = NULL, array $data = [], $data_name = '') {
+    parent::__construct($test_id, $data, $data_name);
     $this->zlibInstalled = function_exists('gzopen');
   }
 
@@ -166,8 +170,6 @@ abstract class UpdatePathTestBase extends BrowserTestBase {
     // Install Drupal test site.
     $this->prepareEnvironment();
     $this->runDbTasks();
-    // Allow classes to set database dump files.
-    $this->setDatabaseDumpFiles();
 
     // We are going to set a missing zlib requirement property for usage
     // during the performUpgrade() and tearDown() methods. Also set that the
