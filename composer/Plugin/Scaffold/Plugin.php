@@ -18,6 +18,8 @@ use Drupal\Composer\Plugin\Scaffold\CommandProvider as ScaffoldCommandProvider;
 
 /**
  * Composer plugin for handling drupal scaffold.
+ *
+ * @internal
  */
 class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
 
@@ -61,6 +63,18 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
   /**
    * {@inheritdoc}
    */
+  public function deactivate(Composer $composer, IOInterface $io) {
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function uninstall(Composer $composer, IOInterface $io) {
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getCapabilities() {
     return [CommandProvider::class => ScaffoldCommandProvider::class];
   }
@@ -89,7 +103,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
   }
 
   /**
-   * Post package event behaviour.
+   * Post package event behavior.
    *
    * @param \Composer\Installer\PackageEvent $event
    *   Composer package event sent on install/update/remove.

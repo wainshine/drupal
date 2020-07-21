@@ -611,7 +611,7 @@ class ViewUI implements ViewEntityInterface {
 
       // Prepare the query information and statistics to show either above or
       // below the view preview.
-      // Initialise the empty rows arrays so we can safely merge them later.
+      // Initialize the empty rows arrays so we can safely merge them later.
       $rows['query'] = [];
       $rows['statistics'] = [];
       if ($show_info || $show_query || $show_stats) {
@@ -994,22 +994,8 @@ class ViewUI implements ViewEntityInterface {
   /**
    * {@inheritdoc}
    */
-  public function urlInfo($rel = 'edit-form', array $options = []) {
-    return $this->storage->toUrl($rel, $options);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function toUrl($rel = 'edit-form', array $options = []) {
     return $this->storage->toUrl($rel, $options);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function link($text = NULL, $rel = 'edit-form', array $options = []) {
-    return $this->storage->link($text, $rel, $options);
   }
 
   /**
@@ -1167,13 +1153,6 @@ class ViewUI implements ViewEntityInterface {
    */
   public function referencedEntities() {
     return $this->storage->referencedEntities();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function url($rel = 'edit-form', $options = []) {
-    return $this->storage->url($rel, $options);
   }
 
   /**

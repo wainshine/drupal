@@ -20,7 +20,7 @@ use Drupal\update\UpdateManagerInterface;
  *   - data: An array of data about each project's status.
  */
 function template_preprocess_update_report(&$variables) {
-  $data = $variables['data'];
+  $data = isset($variables['data']) && is_array($variables['data']) ? $variables['data'] : [];
 
   $last = \Drupal::state()->get('update.last_check') ?: 0;
 
@@ -65,6 +65,7 @@ function template_preprocess_update_report(&$variables) {
       case UpdateManagerInterface::CURRENT:
         $rows[$project['project_type']][$row_key]['#attributes'] = ['class' => ['color-success']];
         break;
+
       case UpdateFetcherInterface::UNKNOWN:
       case UpdateFetcherInterface::FETCH_PENDING:
       case UpdateFetcherInterface::NOT_FETCHED:
@@ -73,6 +74,7 @@ function template_preprocess_update_report(&$variables) {
       case UpdateManagerInterface::NOT_SUPPORTED:
         $rows[$project['project_type']][$row_key]['#attributes'] = ['class' => ['color-error']];
         break;
+
       case UpdateFetcherInterface::NOT_CHECKED:
       case UpdateManagerInterface::NOT_CURRENT:
       default:
@@ -99,6 +101,36 @@ function template_preprocess_update_report(&$variables) {
       ];
     }
   }
+}
+
+/**
+ * Prepares variables for update version templates.
+ *
+ * Default template: update-version.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - version: An array of information about the release version.
+ */
+function template_preprocess_update_version(array &$variables) {
+  $version = $variables['version'];
+  if (empty($version['core_compatibility_message'])) {
+    return;
+  }
+  $core_compatible = !empty($version['core_compatible']);
+  $variables['core_compatibility_details'] = [
+    '#type' => 'details',
+    '#title' => $core_compatible ? t('Compatible') : t('Not compatible'),
+    '#open' => !$core_compatible,
+    'message' => [
+      '#markup' => $version['core_compatibility_message'],
+    ],
+    '#attributes' => [
+      'class' => [
+        $core_compatible ? 'compatible' : 'not-compatible',
+      ],
+    ],
+  ];
 }
 
 /**
@@ -244,15 +276,19 @@ function template_preprocess_update_project_status(&$variables) {
     case UpdateManagerInterface::NOT_SECURE:
       $status_label = t('Security update required!');
       break;
+
     case UpdateManagerInterface::REVOKED:
       $status_label = t('Revoked!');
       break;
+
     case UpdateManagerInterface::NOT_SUPPORTED:
       $status_label = t('Not supported!');
       break;
+
     case UpdateManagerInterface::NOT_CURRENT:
       $status_label = t('Update available');
       break;
+
     case UpdateManagerInterface::CURRENT:
       $status_label = t('Up to date');
       break;
@@ -266,18 +302,21 @@ function template_preprocess_update_project_status(&$variables) {
       $uri = 'core/misc/icons/73b355/check.svg';
       $text = t('Ok');
       break;
+
     case UpdateFetcherInterface::UNKNOWN:
     case UpdateFetcherInterface::FETCH_PENDING:
     case UpdateFetcherInterface::NOT_FETCHED:
       $uri = 'core/misc/icons/e29700/warning.svg';
       $text = t('Warning');
       break;
+
     case UpdateManagerInterface::NOT_SECURE:
     case UpdateManagerInterface::REVOKED:
     case UpdateManagerInterface::NOT_SUPPORTED:
       $uri = 'core/misc/icons/e32700/error.svg';
       $text = t('Error');
       break;
+
     case UpdateFetcherInterface::NOT_CHECKED:
     case UpdateManagerInterface::NOT_CURRENT:
     default:

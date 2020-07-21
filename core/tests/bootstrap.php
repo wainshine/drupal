@@ -8,12 +8,14 @@
  */
 
 use Drupal\Component\Assertion\Handle;
+use Drupal\TestTools\PhpUnitCompatibility\PhpUnit8\ClassWriter;
 
 /**
  * Finds all valid extension directories recursively within a given directory.
  *
  * @param string $scan_directory
  *   The directory that should be recursively scanned.
+ *
  * @return array
  *   An associative array of extension directories found within the scanned
  *   directory, keyed by extension name.
@@ -44,7 +46,7 @@ function drupal_phpunit_find_extension_directories($scan_directory) {
  */
 function drupal_phpunit_contrib_extension_directory_roots($root = NULL) {
   if ($root === NULL) {
-    $root = dirname(dirname(__DIR__));
+    $root = dirname(__DIR__, 2);
   }
   $paths = [
     $root . '/core/modules',
@@ -147,10 +149,12 @@ function drupal_phpunit_populate_class_loader() {
   }
 
   return $loader;
-};
+}
 
 // Do class loader population.
-drupal_phpunit_populate_class_loader();
+$loader = drupal_phpunit_populate_class_loader();
+
+ClassWriter::mutateTestBase($loader);
 
 // Set sane locale settings, to ensure consistent string, dates, times and
 // numbers handling.

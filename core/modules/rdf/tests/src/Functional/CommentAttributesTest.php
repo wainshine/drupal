@@ -24,7 +24,7 @@ class CommentAttributesTest extends CommentTestBase {
    *
    * @var array
    */
-  public static $modules = ['views', 'node', 'comment', 'rdf'];
+  protected static $modules = ['views', 'node', 'comment', 'rdf'];
 
   /**
    * {@inheritdoc}
@@ -45,7 +45,7 @@ class CommentAttributesTest extends CommentTestBase {
    */
   protected $nodeUri;
 
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // Enables anonymous user comments.
@@ -158,7 +158,7 @@ class CommentAttributesTest extends CommentTestBase {
     // Ensure that the author link still works properly after the author output
     // is modified by the RDF module.
     $this->drupalGet('node/' . $this->node->id());
-    $this->assertLink($this->webUser->getAccountName());
+    $this->assertSession()->linkExists($this->webUser->getAccountName());
     $this->assertLinkByHref('user/' . $this->webUser->id());
   }
 

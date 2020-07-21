@@ -39,10 +39,9 @@ function drupal_get_schema_versions($module) {
     // Narrow this down to functions ending with an integer, since all
     // hook_update_N() functions end this way, and there are other
     // possible functions which match '_update_'. We use preg_grep() here
-    // instead of foreaching through all defined functions, since the loop
-    // through all PHP functions can take significant page execution time
-    // and this function is called on every administrative page via
-    // system_requirements().
+    // since looping through all PHP functions can take significant page
+    // execution time and this function is called on every administrative page
+    // via system_requirements().
     foreach (preg_grep('/_\d+$/', $functions['user']) as $function) {
       // If this function is a module update function, add it to the list of
       // module updates.
@@ -81,10 +80,9 @@ function drupal_get_installed_schema_version($module, $reset = FALSE, $array = F
   }
 
   if (!$versions) {
-    $versions = \Drupal::keyValue('system.schema')->getAll();
-    $enabled_modules = \Drupal::moduleHandler()->getModuleList();
-    $enabled_modules = array_fill_keys(array_keys($enabled_modules), \Drupal::CORE_MINIMUM_SCHEMA_VERSION);
-    $versions = array_merge($enabled_modules, $versions);
+    if (!$versions = \Drupal::keyValue('system.schema')->getAll()) {
+      $versions = [];
+    }
   }
 
   if ($array) {

@@ -6,7 +6,6 @@
  */
 
 use Drupal\Core\Database\Database;
-use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\Core\Utility\UpdateException;
@@ -241,13 +240,8 @@ function hook_modules_installed($modules, $is_syncing) {
  * @see hook_modules_installed()
  */
 function hook_install($is_syncing) {
-  // Create the styles directory and ensure it's writable.
-  $directory = \Drupal::config('system.file')->get('default_scheme') . '://styles';
-  \Drupal::service('file_system')->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
-  if (!$is_syncing) {
-    // Modify a configuration value because we're not syncing.
-    \Drupal::configFactory()->getEditable('system.file')->set('default_scheme', 'private')->save();
-  }
+  // Set general module variables.
+  \Drupal::state()->set('mymodule.foo', 'bar');
 }
 
 /**
@@ -316,11 +310,8 @@ function hook_modules_uninstalled($modules, $is_syncing) {
  * @see hook_modules_uninstalled()
  */
 function hook_uninstall($is_syncing) {
-  // Remove the styles directory and generated images.
-  \Drupal::service('file_system')->deleteRecursive(\Drupal::config('system.file')->get('default_scheme') . '://styles');
-  if (!$is_syncing) {
-    \Drupal::service('mymodule.service')->removeContent();
-  }
+  // Delete remaining general module variables.
+  \Drupal::state()->delete('mymodule.foo');
 }
 
 /**
@@ -583,9 +574,6 @@ function hook_install_tasks_alter(&$tasks, $install_state) {
  *   \Drupal::entityDefinitionUpdateManager()::getFieldStorageDefinition(). When
  *   adding a new definition always replicate it in the update function body as
  *   you would do with a schema definition.
- * - Never call \Drupal::entityDefinitionUpdateManager()::applyUpdates() in an
- *   update function, as it will apply updates for any module not only yours,
- *   which will lead to unpredictable results.
  * - Be careful about API functions and especially CRUD operations that you use
  *   in your update function. If they invoke hooks or use services, they may
  *   not behave as expected, and it may actually not be appropriate to use the
@@ -748,6 +736,7 @@ function hook_update_N(&$sandbox) {
  * @ingroup update_api
  *
  * @see hook_update_N()
+ * @see hook_removed_post_updates()
  */
 function hook_post_update_NAME(&$sandbox) {
   // Example of updating some content.
@@ -764,6 +753,30 @@ function hook_post_update_NAME(&$sandbox) {
   }
 
   return $result;
+}
+
+/**
+ * Return an array of removed hook_post_update_NAME() function names.
+ *
+ * This should be used to indicate post-update functions that have existed in
+ * some previous version of the module, but are no longer available.
+ *
+ * This implementation has to be placed in a MODULE.post_update.php file.
+ *
+ * @return string[]
+ *   An array where the keys are removed post-update function names, and the
+ *   values are the first stable version in which the update was removed.
+ *
+ * @ingroup update_api
+ *
+ * @see hook_post_update_NAME()
+ */
+function hook_removed_post_updates() {
+  return [
+    'mymodule_post_update_foo' => '8.x-2.0',
+    'mymodule_post_update_bar' => '8.x-3.0',
+    'mymodule_post_update_baz' => '8.x-3.0',
+  ];
 }
 
 /**

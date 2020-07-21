@@ -60,7 +60,7 @@ abstract class ContentEntityStorageBase extends EntityStorageBase implements Con
    *   The entity field manager.
    * @param \Drupal\Core\Cache\CacheBackendInterface $cache
    *   The cache backend to be used.
-   * @param \Drupal\Core\Cache\MemoryCache\MemoryCacheInterface|null $memory_cache
+   * @param \Drupal\Core\Cache\MemoryCache\MemoryCacheInterface $memory_cache
    *   The memory cache backend.
    * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_type_bundle_info
    *   The entity type bundle info.
@@ -368,7 +368,7 @@ abstract class ContentEntityStorageBase extends EntityStorageBase implements Con
     $entity_type = $this->getEntityType();
 
     // A list of known revision metadata fields which should be skipped from
-    // the comparision.
+    // the comparison.
     $field_names = [
       $entity_type->getKey('revision'),
       $entity_type->getKey('revision_translation_affected'),
@@ -580,45 +580,13 @@ abstract class ContentEntityStorageBase extends EntityStorageBase implements Con
   /**
    * Actually loads revision field item values from the storage.
    *
-   * @param int|string $revision_id
-   *   The revision identifier.
-   *
-   * @return \Drupal\Core\Entity\EntityInterface|null
-   *   The specified entity revision or NULL if not found.
-   *
-   * @deprecated in drupal:8.5.0 and is removed from drupal:9.0.0.
-   *   \Drupal\Core\Entity\ContentEntityStorageBase::doLoadMultipleRevisionsFieldItems()
-   *   should be implemented instead.
-   *
-   * @see https://www.drupal.org/node/2924915
-   */
-  abstract protected function doLoadRevisionFieldItems($revision_id);
-
-  /**
-   * Actually loads revision field item values from the storage.
-   *
-   * This method should always be overridden and not called either directly or
-   * from parent::doLoadMultipleRevisionsFieldItems. It will be marked abstract
-   * in drupal:9.0.0
-   *
    * @param array $revision_ids
    *   An array of revision identifiers.
    *
    * @return \Drupal\Core\Entity\EntityInterface[]
    *   The specified entity revisions or an empty array if none are found.
-   *
-   * @todo Remove this logic and make the method abstract in
-   *   https://www.drupal.org/project/drupal/issues/3069696
    */
-  protected function doLoadMultipleRevisionsFieldItems($revision_ids) {
-    @trigger_error('Calling ' . __NAMESPACE__ . 'ContentEntityStorageBase::doLoadMultipleRevisionsFieldItems() directly is deprecated in drupal:8.8.0 and the method will be made abstract in drupal:9.0.0. Storage implementations should override and implement their own loading logic. See https://www.drupal.org/node/3069692', E_USER_DEPRECATED);
-    $revisions = [];
-    foreach ($revision_ids as $revision_id) {
-      $revisions[] = $this->doLoadRevisionFieldItems($revision_id);
-    }
-
-    return $revisions;
-  }
+  abstract protected function doLoadMultipleRevisionsFieldItems($revision_ids);
 
   /**
    * {@inheritdoc}
@@ -976,7 +944,7 @@ abstract class ContentEntityStorageBase extends EntityStorageBase implements Con
    * @param array $ids
    *   The entity key values to verify.
    * @param string $entity_key
-   *   (optional) The entity key to sanitise values for. Defaults to 'id'.
+   *   (optional) The entity key to sanitize values for. Defaults to 'id'.
    *
    * @return array
    *   The sanitized list of entity key values.

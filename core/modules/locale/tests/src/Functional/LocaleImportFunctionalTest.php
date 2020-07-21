@@ -21,7 +21,7 @@ class LocaleImportFunctionalTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['locale', 'dblog'];
+  protected static $modules = ['locale', 'dblog'];
 
   /**
    * {@inheritdoc}
@@ -46,7 +46,7 @@ class LocaleImportFunctionalTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // Copy test po files to the translations directory.
@@ -55,8 +55,17 @@ class LocaleImportFunctionalTest extends BrowserTestBase {
     $file_system->copy(__DIR__ . '/../../../tests/test.de.po', 'translations://', FileSystemInterface::EXISTS_REPLACE);
     $file_system->copy(__DIR__ . '/../../../tests/test.xx.po', 'translations://', FileSystemInterface::EXISTS_REPLACE);
 
-    $this->adminUser = $this->drupalCreateUser(['administer languages', 'translate interface', 'access administration pages']);
-    $this->adminUserAccessSiteReports = $this->drupalCreateUser(['administer languages', 'translate interface', 'access administration pages', 'access site reports']);
+    $this->adminUser = $this->drupalCreateUser([
+      'administer languages',
+      'translate interface',
+      'access administration pages',
+    ]);
+    $this->adminUserAccessSiteReports = $this->drupalCreateUser([
+      'administer languages',
+      'translate interface',
+      'access administration pages',
+      'access site reports',
+    ]);
     $this->drupalLogin($this->adminUser);
 
     // Enable import of translations. By default this is disabled for automated

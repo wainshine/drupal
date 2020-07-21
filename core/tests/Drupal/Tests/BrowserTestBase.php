@@ -16,6 +16,7 @@ use Drupal\FunctionalTests\AssertLegacyTrait;
 use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\node\Traits\NodeCreationTrait;
+use Drupal\Tests\Traits\PHPUnit8Warnings;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\TestTools\Comparator\MarkupInterfaceComparator;
 use GuzzleHttp\Cookie\CookieJar;
@@ -63,6 +64,7 @@ abstract class BrowserTestBase extends TestCase {
     createUser as drupalCreateUser;
   }
   use XdebugRequestTrait;
+  use PHPUnit8Warnings;
 
   /**
    * The database prefix of this test run.
@@ -209,15 +211,6 @@ abstract class BrowserTestBase extends TestCase {
    * @var \Symfony\Component\DependencyInjection\ContainerInterface
    */
   protected $originalContainer;
-
-  /**
-   * {@inheritdoc}
-   */
-  public function __construct($name = NULL, array $data = [], $dataName = '') {
-    parent::__construct($name, $data, $dataName);
-
-    $this->root = dirname(dirname(substr(__DIR__, 0, -strlen(__NAMESPACE__))));
-  }
 
   /**
    * Initializes Mink sessions.
@@ -395,6 +388,8 @@ abstract class BrowserTestBase extends TestCase {
   protected function setUp() {
     parent::setUp();
 
+    $this->setUpAppRoot();
+
     // Allow tests to compare MarkupInterface objects via assertEquals().
     $this->registerComparator(new MarkupInterfaceComparator());
 
@@ -414,6 +409,15 @@ abstract class BrowserTestBase extends TestCase {
     // PHPUnit 6 tests that only make assertions using $this->assertSession()
     // can be marked as risky.
     $this->addToAssertionCount(1);
+  }
+
+  /**
+   * Sets up the root application path.
+   */
+  protected function setUpAppRoot(): void {
+    if ($this->root === NULL) {
+      $this->root = dirname(substr(__DIR__, 0, -strlen(__NAMESPACE__)), 2);
+    }
   }
 
   /**

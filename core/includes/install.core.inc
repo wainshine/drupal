@@ -20,6 +20,7 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Installer\Exception\AlreadyInstalledException;
 use Drupal\Core\Installer\Exception\InstallerException;
 use Drupal\Core\Installer\Exception\NoProfilesException;
+use Drupal\Core\Installer\Form\SiteSettingsForm;
 use Drupal\Core\Installer\InstallerKernel;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Language\LanguageManager;
@@ -203,8 +204,6 @@ function install_state_defaults() {
     'config_verified' => FALSE,
     // TRUE when there is a valid database connection.
     'database_verified' => FALSE,
-    // TRUE if database is empty & ready to install.
-    'database_ready' => FALSE,
     // TRUE when a valid settings.php exists (containing both database
     // connection information and config directory names).
     'settings_verified' => FALSE,
@@ -252,7 +251,7 @@ function install_state_defaults() {
     // required translation file.
     'server_pattern' => 'http://ftp.drupal.org/files/translations/%core/%project/%project-%version.%language.po',
     // Installation tasks can set this to TRUE to force the page request to
-    // end (even if there is no themable output), in the case of an interactive
+    // end (even if there is no themeable output), in the case of an interactive
     // installation. This is needed only rarely; for example, it would be used
     // by an installation task that prints JSON output rather than returning a
     // themed page. The most common example of this is during batch processing,
@@ -335,7 +334,7 @@ function install_begin_request($class_loader, &$install_state) {
   }
 
   $site_path = empty($install_state['site_path']) ? DrupalKernel::findSitePath($request, FALSE) : $install_state['site_path'];
-  Settings::initialize(dirname(dirname(__DIR__)), $site_path, $class_loader);
+  Settings::initialize(dirname(__DIR__, 2), $site_path, $class_loader);
 
   // Ensure that procedural dependencies are loaded as early as possible,
   // since the error/exception handlers depend on them.
@@ -373,6 +372,11 @@ function install_begin_request($class_loader, &$install_state) {
     ->addArgument(Settings::getInstance())
     ->addArgument((new LoggerChannelFactory())->get('file'));
 
+  // Register the class loader so contrib and custom database drivers can be
+  // autoloaded.
+  // @see drupal_get_database_types()
+  $container->set('class_loader', $class_loader);
+
   \Drupal::setContainer($container);
 
   // Determine whether base system services are ready to operate.
@@ -387,13 +391,6 @@ function install_begin_request($class_loader, &$install_state) {
   // A valid settings.php has database settings and a hash_salt value. Other
   // settings will be checked by system_requirements().
   $install_state['settings_verified'] = $install_state['database_verified'] && (bool) Settings::get('hash_salt', FALSE);
-
-  // Install factory tables only after checking the database.
-  if ($install_state['database_verified'] && $install_state['database_ready']) {
-    $container
-      ->register('path.matcher', 'Drupal\Core\Path\PathMatcher')
-      ->addArgument(new Reference('config.factory'));
-  }
 
   if ($install_state['settings_verified']) {
     try {
@@ -447,7 +444,7 @@ function install_begin_request($class_loader, &$install_state) {
     ->addTranslator($container->get('string_translator.file_translation'));
 
   // Add list of all available profiles to the installation state.
-  $listing = new ExtensionDiscovery($container->get('app.root'));
+  $listing = new ExtensionDiscovery($container->getParameter('app.root'));
   $listing->setProfileDirectories([]);
   $install_state['profiles'] += $listing->scan('profile');
 
@@ -515,18 +512,14 @@ function install_begin_request($class_loader, &$install_state) {
   // accessing the database before it is set up yet.)
   drupal_maintenance_theme();
 
-  if ($install_state['database_verified']) {
-    // Verify the last completed task in the database, if there is one.
-    $task = install_verify_completed_task();
+  if (!$install_state['database_verified']) {
+    // Do not install over an existing installation. The call to
+    // install_verify_database_ready() will throw an AlreadyInstalledException
+    // if this is the case.
+    install_verify_database_ready();
   }
-  else {
-    $task = NULL;
-
-    // Do not install over a configured settings.php.
-    if (Database::getConnectionInfo()) {
-      throw new AlreadyInstalledException($container->get('string_translation'));
-    }
-  }
+  // Verify the last completed task in the database, if there is one.
+  $task = install_verify_completed_task();
 
   // Ensure that the active configuration is empty before installation starts.
   if ($install_state['config_verified'] && empty($task)) {
@@ -794,7 +787,7 @@ function install_tasks($install_state) {
       'function' => 'Drupal\Core\Installer\Form\SiteSettingsForm',
     ],
     'install_verify_database_ready' => [
-      'run' => $install_state['database_ready'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
+      'run' => INSTALL_TASK_RUN_IF_NOT_COMPLETED,
     ],
     'install_base_system' => [
       'run' => $install_state['base_system_verified'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
@@ -1027,7 +1020,7 @@ function install_display_output($output, $install_state) {
   // Prevent install.php from being indexed when installed in a sub folder.
   // robots.txt rules are not read if the site is within domain.com/subfolder
   // resulting in /subfolder/install.php being found through search engines.
-  // When settings.php is writeable this can be used via an external database
+  // When settings.php is writable this can be used via an external database
   // leading a malicious user to gain php access to the server.
   $noindex_meta_tag = [
     '#tag' => 'meta',
@@ -1168,16 +1161,28 @@ function install_verify_database_settings($site_path) {
 
 /**
  * Verify that the database is ready (no existing Drupal installation).
+ *
+ * @throws \Drupal\Core\Installer\Exception\AlreadyInstalledException
+ *   Thrown when the database already has a table that would be created by
+ *   installing the System module.
  */
 function install_verify_database_ready() {
   $system_schema = system_schema();
   end($system_schema);
   $table = key($system_schema);
 
+  $existing_install = FALSE;
   if ($database = Database::getConnectionInfo()) {
-    if (Database::getConnection()->schema()->tableExists($table)) {
-      throw new AlreadyInstalledException(\Drupal::service('string_translation'));
+    try {
+      $existing_install = Database::getConnection()->schema()->tableExists($table);
     }
+    // Do not trigger an error if the database query fails, since the database
+    // might not be set up yet.
+    catch (\Exception $e) {
+    }
+  }
+  if ($existing_install) {
+    throw new AlreadyInstalledException(\Drupal::service('string_translation'));
   }
 }
 
@@ -1204,7 +1209,7 @@ function install_database_errors($database, $settings_file) {
     // calling function.
     Database::addConnectionInfo('default', 'default', $database);
 
-    $errors = db_installer_object($driver)->runTasks();
+    $errors = db_installer_object($driver, $database['namespace'] ?? NULL)->runTasks();
   }
   return $errors;
 }
@@ -1235,7 +1240,7 @@ function install_select_profile(&$install_state) {
     else {
       // The non-interactive installer requires a profile parameter.
       if (!$install_state['interactive']) {
-        throw new InstallerException(t('Missing profile parameter.'));
+        throw new InstallerException('Missing profile parameter.');
       }
       // Otherwise, display a form to select a profile.
       return install_get_form('Drupal\Core\Installer\Form\SelectProfileForm', $install_state);
@@ -1380,7 +1385,7 @@ function install_select_language(&$install_state) {
         return;
       }
       else {
-        throw new InstallerException(t('You must select a language to continue the installation.'));
+        throw new InstallerException('You must select a language to continue the installation.');
       }
     }
   }
@@ -1638,7 +1643,6 @@ function install_profile_themes(&$install_state) {
  *   An array of information about the current installation state.
  */
 function install_install_profile(&$install_state) {
-  \Drupal::service('module_installer')->install([$install_state['parameters']['profile']], FALSE);
   // Install all available optional config. During installation the module order
   // is determined by dependencies. If there are no dependencies between modules
   // then the order in which they are installed is dependent on random factors
@@ -1647,6 +1651,8 @@ function install_install_profile(&$install_state) {
   // optional configuration whose dependencies can be met at this point removes
   // any disparities that this creates.
   \Drupal::service('config.installer')->installOptionalConfig();
+
+  \Drupal::service('module_installer')->install([$install_state['parameters']['profile']], FALSE);
 
   // Ensure that the install profile's theme is used.
   // @see _drupal_maintenance_theme()
@@ -1896,7 +1902,7 @@ function install_check_translations($langcode, $server_pattern) {
   $readable = FALSE;
   $writable = FALSE;
   // @todo: Make this configurable.
-  $site_path = \Drupal::service('site.path');
+  $site_path = \Drupal::getContainer()->getParameter('site.path');
   $files_directory = $site_path . '/files';
   $translations_directory = $site_path . '/files/translations';
   $translations_directory_exists = FALSE;
@@ -2075,7 +2081,7 @@ function install_check_requirements($install_state) {
   foreach ($default_files as $default_file_info) {
     $readable = FALSE;
     $writable = FALSE;
-    $site_path = './' . \Drupal::service('site.path');
+    $site_path = './' . \Drupal::getContainer()->getParameter('site.path');
     $file = $site_path . "/{$default_file_info['file']}";
     $default_file = "./sites/default/{$default_file_info['file_default']}";
     $exists = FALSE;
@@ -2212,6 +2218,25 @@ function install_check_requirements($install_state) {
               ':install_txt' => base_path() . 'core/INSTALL.txt',
               ':handbook_url' => 'https://www.drupal.org/server-permissions',
             ]),
+        ];
+      }
+    }
+
+    // Check the database settings if they have been configured in settings.php
+    // before running the Drupal installer.
+    if ($database = Database::getConnectionInfo()) {
+      $request = Request::createFromGlobals();
+      $site_path = empty($install_state['site_path']) ? DrupalKernel::findSitePath($request, FALSE) : $install_state['site_path'];
+      $database = $database['default'];
+      $settings_file = './' . $site_path . '/settings.php';
+
+      $errors = install_database_errors($database, $settings_file);
+      if (count($errors)) {
+        $error_message = SiteSettingsForm::getDatabaseErrorsTemplate($errors);
+        $requirements['database_install_errors'] = [
+          'title' => t('Database settings'),
+          'description' => $error_message,
+          'severity' => REQUIREMENT_ERROR,
         ];
       }
     }

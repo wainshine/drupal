@@ -9,6 +9,8 @@ use Composer\Package\RootPackageInterface;
  *
  * Default configuration is merged with the root package's
  * extra:drupal-core-vendor-hardening configuration.
+ *
+ * @internal
  */
 class Config {
 
@@ -22,7 +24,6 @@ class Config {
     'behat/mink-browserkit-driver' => ['tests'],
     'behat/mink-goutte-driver' => ['tests'],
     'behat/mink-selenium2-driver' => ['tests'],
-    'brumann/polyfill-unserialize' => ['tests'],
     'composer/composer' => ['bin'],
     'drupal/coder' => [
       'coder_sniffer/Drupal/Test',
@@ -35,13 +36,10 @@ class Config {
     'guzzlehttp/promises' => ['tests'],
     'guzzlehttp/psr7' => ['tests'],
     'instaclick/php-webdriver' => ['doc', 'test'],
-    'jcalderonzumba/gastonjs' => ['docs', 'examples', 'tests'],
-    'jcalderonzumba/mink-phantomjs-driver' => ['tests'],
     'justinrainbow/json-schema' => ['demo'],
     'masterminds/html5' => ['bin', 'test'],
     'mikey179/vfsstream' => ['src/test'],
     'myclabs/deep-copy' => ['doc'],
-    'paragonie/random_compat' => ['tests'],
     'pear/archive_tar' => ['docs', 'tests'],
     'pear/console_getopt' => ['tests'],
     'pear/pear-core-minimal' => ['tests'],
@@ -54,7 +52,6 @@ class Config {
     'phpunit/php-timer' => ['tests'],
     'phpunit/php-token-stream' => ['tests'],
     'phpunit/phpunit' => ['tests'],
-    'phpunit/phpunit-mock-objects' => ['tests'],
     'sebastian/code-unit-reverse-lookup' => ['tests'],
     'sebastian/comparator' => ['tests'],
     'sebastian/diff' => ['tests'],
@@ -68,7 +65,6 @@ class Config {
     'squizlabs/php_codesniffer' => ['tests'],
     'stack/builder' => ['tests'],
     'symfony/browser-kit' => ['Tests'],
-    'symfony/class-loader' => ['Tests'],
     'symfony/console' => ['Tests'],
     'symfony/css-selector' => ['Tests'],
     'symfony/debug' => ['Tests'],
@@ -90,9 +86,6 @@ class Config {
     'symfony-cmf/routing' => ['Test', 'Tests'],
     'theseer/tokenizer' => ['tests'],
     'twig/twig' => ['doc', 'ext', 'test', 'tests'],
-    'zendframework/zend-escaper' => ['doc'],
-    'zendframework/zend-feed' => ['doc'],
-    'zendframework/zend-stdlib' => ['doc'],
   ];
 
   /**

@@ -22,7 +22,12 @@ class InstallUninstallTest extends ModuleTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['system_test', 'dblog', 'taxonomy', 'update_test_postupdate'];
+  protected static $modules = [
+    'system_test',
+    'dblog',
+    'taxonomy',
+    'update_test_postupdate',
+  ];
 
   /**
    * Tests that a fixed set of modules can be installed and uninstalled.
@@ -300,7 +305,16 @@ class InstallUninstallTest extends ModuleTestBase {
     $existing_updates = \Drupal::keyValue('post_update')->get('existing_updates', []);
     switch ($module) {
       case 'update_test_postupdate':
-        $this->assertEmpty(array_diff(['update_test_postupdate_post_update_first', 'update_test_postupdate_post_update_second', 'update_test_postupdate_post_update_test1', 'update_test_postupdate_post_update_test0'], $existing_updates));
+        $expected = [
+          'update_test_postupdate_post_update_first',
+          'update_test_postupdate_post_update_second',
+          'update_test_postupdate_post_update_test1',
+          'update_test_postupdate_post_update_test0',
+          'update_test_postupdate_post_update_foo',
+          'update_test_postupdate_post_update_bar',
+          'update_test_postupdate_post_update_baz',
+        ];
+        $this->assertSame($expected, $existing_updates);
         break;
     }
   }
@@ -340,9 +354,9 @@ class InstallUninstallTest extends ModuleTestBase {
    */
   protected function assertHelp($module, $name) {
     $this->drupalGet('admin/help/' . $module);
-    $this->assertResponse(200, "Help for $module displayed successfully");
+    $this->assertSession()->statusCodeEquals(200);
     $this->assertText($name . ' module', "'$name module' is on the help page for $module");
-    $this->assertLink('online documentation for the ' . $name . ' module', 0, "Correct online documentation link is in the help page for $module");
+    $this->assertSession()->linkExists('online documentation for the ' . $name . ' module', 0, "Correct online documentation link is in the help page for $module");
   }
 
   /**

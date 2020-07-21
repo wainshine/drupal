@@ -78,7 +78,7 @@
     'scroll.TableHeader': tableHeaderOnScrollHandler
   });
   $(document).on({
-    'columnschange.TableHeader': tableHeaderResizeHandler,
+    'columnschange.TableHeader drupalToolbarTrayChange': tableHeaderResizeHandler,
     'drupalViewportOffsetChange.TableHeader': tableHeaderOffsetChangeHandler
   });
   $.extend(TableHeader, {
@@ -91,7 +91,7 @@
     stickyVisible: false,
     createSticky: function createSticky() {
       var $stickyHeader = this.$originalHeader.clone(true);
-      this.$stickyTable = $('<table class="sticky-header"/>').css({
+      this.$stickyTable = $('<table class="sticky-header"></table>').css({
         visibility: 'hidden',
         position: 'fixed',
         top: '0px'

@@ -193,14 +193,9 @@ class ModuleInstaller implements ModuleInstallerInterface {
           }
         }
 
-        // Update the module handler in order to load the module's code.
-        // This allows the module to participate in hooks and its existence to
-        // be discovered by other modules.
-        // The current ModuleHandler instance is obsolete with the kernel
-        // rebuild below.
+        // Update the module handler in order to have the correct module list
+        // for the kernel update.
         $this->moduleHandler->setModuleList($module_filenames);
-        $this->moduleHandler->load($module);
-        module_load_install($module);
 
         // Clear the static cache of the "extension.list.module" service to pick
         // up the new module, since it merges the installation status of modules
@@ -209,6 +204,10 @@ class ModuleInstaller implements ModuleInstallerInterface {
 
         // Update the kernel to include it.
         $this->updateKernel($module_filenames);
+
+        // Load the module's .module and .install files.
+        $this->moduleHandler->load($module);
+        module_load_install($module);
 
         // Replace the route provider service with a version that will rebuild
         // if routes used during installation. This ensures that a module's
@@ -295,10 +294,13 @@ class ModuleInstaller implements ModuleInstallerInterface {
         }
         drupal_set_installed_schema_version($module, $version);
 
-        // Ensure that all post_update functions are registered already.
+        // Ensure that all post_update functions are registered already. This
+        // should include existing post-updates, as well as any specified as
+        // having been previously removed, to ensure that newly installed and
+        // updated sites have the same entries in the registry.
         /** @var \Drupal\Core\Update\UpdateRegistry $post_update_registry */
         $post_update_registry = \Drupal::service('update.post_update_registry');
-        $post_update_registry->registerInvokedUpdates($post_update_registry->getModuleUpdateFunctions($module));
+        $post_update_registry->registerInvokedUpdates(array_merge($post_update_registry->getModuleUpdateFunctions($module), array_keys($post_update_registry->getRemovedPostUpdates($module))));
 
         // Record the fact that it was installed.
         $modules_installed[] = $module;
@@ -369,12 +371,14 @@ class ModuleInstaller implements ModuleInstallerInterface {
     }
 
     if ($uninstall_dependents) {
+      $theme_list = \Drupal::service('extension.list.theme')->getList();
+
       // Add dependent modules to the list. The new modules will be processed as
       // the foreach loop continues.
       foreach ($module_list as $module => $value) {
         foreach (array_keys($module_data[$module]->required_by) as $dependent) {
-          if (!isset($module_data[$dependent])) {
-            // The dependent module does not exist.
+          if (!isset($module_data[$dependent]) && !isset($theme_list[$dependent])) {
+            // The dependent module or theme does not exist.
             return FALSE;
           }
 

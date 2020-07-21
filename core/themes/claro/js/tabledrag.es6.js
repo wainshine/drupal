@@ -13,7 +13,7 @@
  * - The initial content of the tabledrag-cell is wrapped into a new DOM element
  *   ".tabledrag-cell-content__item". This new element is moved into an another
  *   ".tabledrag-cell-content" division that contains the drag handle, the
- *   identation elements and the tabledrag changed mark as well.
+ *   indentation elements and the tabledrag changed mark as well.
  *   This is needed to keep all of these element in a single line
  *   (https://www.drupal.org/node/3083044).
  *   Claro introduced two theme functions for these:
@@ -237,10 +237,10 @@
       // manually append 2 indentations in the first draggable row, measure
       // the offset, then remove.
       const indent = Drupal.theme('tableDragIndentation');
-      const testRow = $('<tr/>')
+      const testRow = $('<tr></tr>')
         .addClass('draggable')
         .appendTo(table);
-      const testCell = $('<td/>')
+      const testCell = $('<td></td>')
         .appendTo(testRow)
         .prepend(indent)
         .prepend(indent);
@@ -817,7 +817,7 @@
      * @param {Drupal.tableDrag} self
      *   The drag handle.
      * @param {HTMLElement} item
-     *   The item that that is being dragged.
+     *   The item that is being dragged.
      */
     dragStart(event, self, item) {
       // Create a new dragObject recording the pointer information.
@@ -1808,7 +1808,7 @@
       },
 
       /**
-       * Constucts the table drag handle.
+       * Constructs the table drag handle.
        *
        * @return {string}
        *   A string representing a DOM fragment.
@@ -1824,7 +1824,7 @@
        *   A string representing a DOM fragment.
        */
       tableDragCellItemsWrapper() {
-        return '<div class="tabledrag-cell-content"/>';
+        return '<div class="tabledrag-cell-content"></div>';
       },
 
       /**
@@ -1834,7 +1834,7 @@
        *   A string representing a DOM fragment.
        */
       tableDragCellContentWrapper() {
-        return '<div class="tabledrag-cell-content__item"/>';
+        return '<div class="tabledrag-cell-content__item"></div>';
       },
 
       /**

@@ -66,7 +66,7 @@ class AliasManagerTest extends UnitTestCase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->aliasRepository = $this->createMock(AliasRepositoryInterface::class);
@@ -108,7 +108,7 @@ class AliasManagerTest extends UnitTestCase {
    *
    * @covers ::getPathByAlias
    */
-  public function testGetPathByAliasNatch() {
+  public function testGetPathByAliasMatch() {
     $alias = $this->randomMachineName();
     $path = $this->randomMachineName();
 

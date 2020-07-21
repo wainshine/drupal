@@ -47,10 +47,12 @@ class ThemeExtensionList extends ExtensionList {
       'comment_user_verification',
     ],
     'screenshot' => 'screenshot.png',
+    'version' => NULL,
     'php' => DRUPAL_MINIMUM_PHP,
     'libraries' => [],
     'libraries_extend' => [],
     'libraries_override' => [],
+    'dependencies' => [],
   ];
 
   /**
@@ -140,6 +142,22 @@ class ThemeExtensionList extends ExtensionList {
     // sub-themes.
     $this->fillInSubThemeData($themes, $sub_themes);
 
+    foreach ($themes as $key => $theme) {
+      // After $theme is processed by buildModuleDependencies(), there can be a
+      // `$theme->requires` array containing both module and base theme
+      // dependencies. The module dependencies are copied to their own property
+      // so they are available to operations specific to module dependencies.
+      if (isset($theme->requires)) {
+        $theme->module_dependencies = array_diff_key($theme->requires, $themes);
+      }
+      else {
+        // Even if no requirements are specified, the theme installation process
+        // expects the presence of the `requires` and `module_dependencies`
+        // properties, so they should be initialized here as empty arrays.
+        $theme->requires = [];
+        $theme->module_dependencies = [];
+      }
+    }
     return $themes;
   }
 
@@ -248,7 +266,7 @@ class ThemeExtensionList extends ExtensionList {
     $info = parent::createExtensionInfo($extension);
 
     if (!isset($info['base theme'])) {
-      throw new InfoParserException('Missing required key (base_theme) in ' . $extension->getExtensionPathname() . '/' . $extension->getExtensionFilename());
+      throw new InfoParserException(sprintf('Missing required key ("base theme") in %s/%s, see https://www.drupal.org/node/3066038', $extension->getExtensionPathname(), $extension->getExtensionFilename()));
     }
 
     // Remove the base theme when 'base theme: false' is set in a theme

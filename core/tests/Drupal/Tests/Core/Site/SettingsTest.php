@@ -31,7 +31,7 @@ class SettingsTest extends UnitTestCase {
   /**
    * @covers ::__construct
    */
-  protected function setUp() {
+  protected function setUp(): void {
     $this->config = [
       'one' => '1',
       'two' => '2',
@@ -142,9 +142,9 @@ class SettingsTest extends UnitTestCase {
     $settings = new Settings([]);
 
     $class = new \ReflectionClass(Settings::class);
-    $instace_property = $class->getProperty("instance");
-    $instace_property->setAccessible(TRUE);
-    $instace_property->setValue(NULL);
+    $instance_property = $class->getProperty("instance");
+    $instance_property->setAccessible(TRUE);
+    $instance_property->setValue(NULL);
 
     $this->expectException(\BadMethodCallException::class);
     $settings->getInstance();
